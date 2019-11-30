@@ -18,7 +18,17 @@ histogram n xs
 
 -- Exercise A2
 approxSqrt :: Double -> Double -> Double
-approxSqrt d eps = -1
+approxSqrt d eps | d <= 0 = error "Cannot compute square root of 0"
+                 | eps <= 0 = error "Cannot have negative number"
+                 | otherwise = approxSqrt1 d eps 1
+
+approxSqrt1 d eps x | (x + d/x)/2 - sqrt(d) < eps  = (x + d/x)/2
+                    | otherwise = approxSqrt1 d eps (x+1)
+
+--Exceptional Cases:
+-- 25 5
+-- 25 3
+-- (12345^2) 1
 
 -- Exercise A3
 longestCommonSubsequence :: Eq a => [[a]] -> [a]

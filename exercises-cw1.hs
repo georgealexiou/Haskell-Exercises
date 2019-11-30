@@ -32,7 +32,19 @@ approxSqrt1 d eps x | (x + d/x)/2 - sqrt(d) < eps  = (x + d/x)/2
 
 -- Exercise A3
 longestCommonSubsequence :: Eq a => [[a]] -> [a]
-longestCommonSubsequence xss = []
+longestCommonSubsequence xss
+    | xss == [] = []
+    | length xss == 1 = head xss
+    | [] `elem` xss = []
+
+longestCommonSubsequence (x:y:xs) = longestCommonSubsequence (longestCommonSubsequence' x y : xs)
+
+longestCommonSubsequence' :: Eq a => [a] -> [a] -> [a]
+longestCommonSubsequence' (x:xs) (y:ys) | x == y    = x : longestCommonSubsequence' xs ys
+                           | otherwise = longest (longestCommonSubsequence' (x:xs) ys) (longestCommonSubsequence' xs (y:ys))
+                           where
+                             longest a b | length a > length b = a
+                                         | otherwise = b
 
 -- Exercise A4
 type Point a = (a,a)

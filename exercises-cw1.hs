@@ -46,6 +46,7 @@ longestCommonSubsequence' (x:xs) (y:ys) | x == y    = x : longestCommonSubsequen
                              longest a b | length a > length b = a
                                          | otherwise = b
 
+
 -- Exercise A4
 type Point a = (a,a)
 type Metric a = (Point a) -> (Point a) -> Double
@@ -53,12 +54,13 @@ type Metric a = (Point a) -> (Point a) -> Double
 neighbours ::  Int -> Metric a -> Point a -> [Point a] -> [Point a]
 neighbours k d p ps = []
 
+
 -- Exercise A5
 findBonding :: Eq a => (a -> a -> Bool) -> [a] -> Maybe [(a,a)]
 findBonding p xs = Nothing
 
--- Exercise A6
 
+-- Exercise A6
 data VTree a = Leaf | Node (VTree a) a Int (VTree a) deriving (Eq,Show,Generic,Generic1)
 data Direction a = L a Int (VTree a) | R a Int (VTree a) deriving (Eq,Show,Generic,Generic1)
 type Trail a = [Direction a]
@@ -72,6 +74,21 @@ insertFromCurrentNode v z = (Leaf,[])
 
 
 -- Exercise A7
+data Instruction = Add | Mul | Dup | Pop deriving (Eq,Ord,Show,Generic)
+type Stack = [Int]
+type SMProg = [Instruction] 
+
+instance NFData (Instruction)
+
+evalInst :: Stack -> SMProg -> Stack
+evalInst s p = []
+
+
 -- Exercise A8
+findMaxReducers :: Stack -> [SMProg]
+findMaxReducers ns = []
+
+
 -- Exercise A9
--- Exercise A10
+optimalPower :: Int -> SMProg
+optimalPower n = []

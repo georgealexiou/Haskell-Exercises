@@ -10,6 +10,7 @@ module Exercises (histogram,approxSqrt,longestCommonSubsequence,neighbours,findB
 -- The following two imports are needed for testing, do not delete
 import GHC.Generics (Generic,Generic1)
 import Control.DeepSeq
+import Data.List
 import Data.List (foldl', zipWith4, sortBy)
 import Data.Function (on)
 import Data.Tuple
@@ -19,9 +20,9 @@ import Data.Tuple
 histogram :: Int -> [Int] -> [Int]
 
 histogram n xs
-    | n <= 0 = error "Error: can't have n<=0"
     | xs == [] = []
-    | otherwise = [(length . filter (==y)) [x `div` n | x <- xs] | y <- [0..(maximum(xs) `div` n)]]
+    | n <= 0 = error "Can't compute histogram for negative n"
+    | otherwise = [(length . filter (==m)) [x `div` n | x <- xs] | m <- [0..(maximum(xs) `div` n)]]
 
 
 -------------------------------------------------------------------------------------------------------------
@@ -53,11 +54,12 @@ longestCommonSubsequence (x:y:xs) = longestCommonSubsequence (longestCommonSubse
 longestCommonSubsequence' :: Eq a => [a] -> [a] -> [a]
 longestCommonSubsequence' [] _ = []
 longestCommonSubsequence' _ [] = []
-longestCommonSubsequence' (x:xs) (y:ys) | x == y    = x : longestCommonSubsequence' xs ys
-                           | otherwise = longest (longestCommonSubsequence' (x:xs) ys) (longestCommonSubsequence' xs (y:ys))
-                           where
-                             longest a b | length a > length b = a
-                                         | otherwise = b
+longestCommonSubsequence' (x:xs) (y:ys) 
+    | x == y    = x : longestCommonSubsequence' xs ys
+    | otherwise = longest (longestCommonSubsequence' (x:xs) ys) (longestCommonSubsequence' xs (y:ys))
+        where
+           longest a b | length a > length b = a
+                       | otherwise = b
 
 
 -------------------------------------------------------------------------------------------------------------
@@ -65,33 +67,40 @@ longestCommonSubsequence' (x:xs) (y:ys) | x == y    = x : longestCommonSubsequen
 type Point a = (a,a)
 type Metric a = (Point a) -> (Point a) -> Double
 
-neighbours ::  Int -> Metric a -> Point a -> [Point a] -> [Point a]
-neighbours k d p ps 
-    | k < 0 = error "Negative k"
-    | k == 0 = []
-    | length ps == 0 = []
-    | length ps < k = []
-
-neight a b m = m
-
-getManhattan (x1, y1) (x2, y2) = abs(x1 - x2) + abs(y1 - y2)
+neighbours :: Int -> Metric a -> Point a -> [Point a] -> [Point a]
+neighbours k d p xs | k >= 0 = take k (sortBy (\x y -> compare (d p x) (d p y)) xs) 
+                    | otherwise = error "Cannot have negative k"
 
 
 -------------------------------------------------------------------------------------------------------------
 -- Exercise A5 ----------------------------------------------------------------------------------------------
-findBonding :: Eq a => (a -> a -> Bool) -> [a] -> Maybe [(a,a)]
-findBonding p xs
-    | odd(length xs) = error "odd"
-    | otherwise = Just (recursion ([ (x,y) | x <- xs, y <- xs, x/=y, p x y]))
 
-recursion :: Eq a => [(a,a)] -> [(a,a)]
-recursion xs
-    | (swap(head xs)) `elem` xs  = recursion (filter (\x -> fst x /= a && fst x /= snd x && fst x /= b && snd x /= b) xs ++ [(a,b)])
-    | otherwise = xs
-        where (a,b) = head xs
+generateSatisfyingPairs :: Eq a => (a -> a -> Bool) -> [a] -> [[(a,a)]]
+generateAllCombinations :: Eq a => [[(a,a)]] -> [[(a,a)]]
+findBondingCombinations :: Eq a => Ord a => [[(a,a)]] -> [a] -> [[(a,a)]]
+checkSymmetry :: Eq a => [(a,a)] -> [(a,a)]
 
-makeSymmetrics :: Eq a => [(a,a)] -> [(a,a)]
-makeSymmetrics xs = foldr (\t l -> t:(swap t):l) [] xs
+findBonding p [] = Nothing
+findBonding p xs = do
+                    let satisfyingPairs = generateSatisfyingPairs p xs
+                    if (all (/= []) satisfyingPairs)
+                        then do
+                        let bondings = findBondingCombinations (generateAllCombinations satisfyingPairs) xs
+                        if (length bondings) > 0
+                            then return (head bondings)
+                            else Nothing
+                        else Nothing
+
+--For each combination check range of x and y of (x,y) equal xs i.e. domain, and check a symmetrical pair exist for each pair
+findBondingCombinations css xs = [bcs | bcs <- css, ((sort [first | c <- bcs, first <- [fst c]] == sort xs) && (sort [second | c <- bcs, second <- [snd c]] == sort xs) && (checkSymmetry bcs == bcs)) ]
+checkSymmetry cs = [nc | nc <- cs, oc <- cs, nc == (snd oc, fst oc)]
+
+generateAllCombinations (cs:css)  
+       | length css > 1  = [r : t | r <- cs, t <- generateAllCombinations css]
+       | otherwise    = [[r,s] | r <- cs, s <- head css]
+
+
+generateSatisfyingPairs p xs = [ pxs | x <- xs, pxs <- [[pys |  y <- xs, (p x y), x /= y, pys <- [(x, y)]]] ]
 
 
 -------------------------------------------------------------------------------------------------------------
@@ -165,7 +174,47 @@ determineInst x y
 
 -------------------------------------------------------------------------------------------------------------
 -- Exercise A9 ----------------------------------------------------------------------------------------------
+data OptTree i = OptLeaf | OptNode (OptTree i) i (OptTree i) deriving (Eq,Show)
+
 optimalPower :: Int -> SMProg
 optimalPower n
     | n <= 0 = error "Cannot accept input that is 0 or smaller"
     | n == 1 = []
+    | otherwise = map (\i -> if i==Add then Mul; else i) (findOptimal n (getEven n)) 
+            
+getEven n
+    | (floor (2 * (logBase 2 (fromIntegral n)))) `mod` 2 == 0 = (floor (2 * (logBase 2 (fromIntegral n))))
+    | otherwise = (floor (2 * (logBase 2 (fromIntegral n)))) + 1
+
+
+findOptimal :: Int -> Int -> SMProg
+findOptimal n d
+    | length opt > 0 = head opt
+    | otherwise = findOptimal n (d+2)
+          where
+             opt = take 1 [ p | p <- (summarize(generate d Dup)), findPower [1] p == [n]]
+
+findPower :: Stack -> SMProg -> Stack
+findPower [] _ = error "Cannot have empty stack"
+findPower s [] = s
+findPower s p
+    | (head p == Mul || head p == Add) && length s == 1 = findPower [0] []
+    | head p == Mul = findPower ((head s * head(tail s)) : tail(tail s)) (tail p)
+    | head p == Add = findPower ((head s + head(tail s)) : tail(tail s)) (tail p)
+    | head p == Dup = findPower ((head s) : s) (tail p)
+    | head p == Pop = findPower (tail s) (tail p)
+
+generate :: Int -> Instruction -> OptTree Instruction
+generate 0 _ = OptLeaf
+generate depth i = OptNode (generate (depth - 1) Dup) i (generate (depth - 1) Add)
+
+summarize :: OptTree a -> [[a]]
+summarize OptLeaf = [[]]
+summarize (OptNode OptLeaf x r) = map (x:) (summarize r)
+summarize (OptNode l x OptLeaf) = map (x:) (summarize l)
+summarize (OptNode l x r) = map (x:) (lhs++rhs) where 
+    lhs = summarize l
+    rhs = summarize r
+
+
+

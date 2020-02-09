@@ -1,0 +1,35 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{COMP2209 - Lambda Calculus Coursework}
+\author{Georgios Alexiou - ga4g18}
+\date{January 2020}
+
+\begin{document}
+
+\maketitle
+
+In order to complete the COMP2209 Lambda Calculus Coursework, 
+a variety of development techniques and tools where used. When taking on a
+challenge, I examined the provided sample test cases in \textit{Tests.hs} in
+order to gain a good understanding of what my code needs to accomplish. After writing
+code that covers the base test cases, I used test cases from other challenges as well as my own,
+in order to to further examine the effectiveness of my code. This way, I was able to
+develop code that worked for a variety of lambda as well as let expressions for each
+given problem.  
+\\\\
+\indent The recursion coding technique was heavily used through most of the examples,
+as each lambda or let expression given was thought of as a syntax tree which was
+recursively traversed to give the desired result. For a lot of examples, a combination
+of recursion and pattern matching, helped seperate different types of lambda or let subexpressions.
+In order to create simpler and cleaner code, all challenges consist of smaller functions
+that aim to complete simpler tasks to lead to the desired result. I also heavily commented
+my code so as to provide anyone reading it as well as myself with a clear idea of what
+each function does but also how it operates.
+\\\\
+\indent When writing my code, the standard Haskell debugging tools where heavily employed
+in order to locate errors and reconsider the techniques used. This was especially important for
+Challenges 1 and 2 where a lot of the time it was hard to locate the errors that occured when alpha
+or beta reducing in each respective example.z
+
+\end{document}

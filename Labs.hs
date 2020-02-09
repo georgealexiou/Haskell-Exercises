@@ -55,11 +55,11 @@ longestCommonSubsequence' :: Eq a => [a] -> [a] -> [a]
 longestCommonSubsequence' [] _ = []
 longestCommonSubsequence' _ [] = []
 longestCommonSubsequence' (x:xs) (y:ys) 
-    | x == y    = x : longestCommonSubsequence' xs ys
+    | x == y = x : longestCommonSubsequence' xs ys
     | otherwise = longest (longestCommonSubsequence' (x:xs) ys) (longestCommonSubsequence' xs (y:ys))
         where
-           longest a b | length a > length b = a
-                       | otherwise = b
+             longest a b | length a > length b = a
+                         | otherwise = b
 
 
 -------------------------------------------------------------------------------------------------------------
@@ -75,32 +75,21 @@ neighbours k d p xs | k >= 0 = take k (sortBy (\x y -> compare (d p x) (d p y)) 
 -------------------------------------------------------------------------------------------------------------
 -- Exercise A5 ----------------------------------------------------------------------------------------------
 
-generateSatisfyingPairs :: Eq a => (a -> a -> Bool) -> [a] -> [[(a,a)]]
-generateAllCombinations :: Eq a => [[(a,a)]] -> [[(a,a)]]
-findBondingCombinations :: Eq a => Ord a => [[(a,a)]] -> [a] -> [[(a,a)]]
-checkSymmetry :: Eq a => [(a,a)] -> [(a,a)]
-
-findBonding p [] = Nothing
-findBonding p xs = do
-                    let satisfyingPairs = generateSatisfyingPairs p xs
-                    if (all (/= []) satisfyingPairs)
-                        then do
-                        let bondings = findBondingCombinations (generateAllCombinations satisfyingPairs) xs
-                        if (length bondings) > 0
-                            then return (head bondings)
-                            else Nothing
-                        else Nothing
-
---For each combination check range of x and y of (x,y) equal xs i.e. domain, and check a symmetrical pair exist for each pair
-findBondingCombinations css xs = [bcs | bcs <- css, ((sort [first | c <- bcs, first <- [fst c]] == sort xs) && (sort [second | c <- bcs, second <- [snd c]] == sort xs) && (checkSymmetry bcs == bcs)) ]
-checkSymmetry cs = [nc | nc <- cs, oc <- cs, nc == (snd oc, fst oc)]
-
-generateAllCombinations (cs:css)  
-       | length css > 1  = [r : t | r <- cs, t <- generateAllCombinations css]
-       | otherwise    = [[r,s] | r <- cs, s <- head css]
+findBonding :: Eq a => (a -> a -> Bool) -> [a] -> Maybe [(a,a)]
+findBonding p xs
+    | length xs == 0 = error "Can't have empty list"
+    | odd (length xs) = error "Can't have list of odd length"
+    | otherwise = Just (makeSymmetrics (head (combos p xs)))
 
 
-generateSatisfyingPairs p xs = [ pxs | x <- xs, pxs <- [[pys |  y <- xs, (p x y), x /= y, pys <- [(x, y)]]] ]
+makeSymmetrics :: Eq a => [(a,a)] -> [(a,a)]
+makeSymmetrics xs = foldr (\t l -> t:(swap t):l) [] xs
+
+combos p xs = [ es | (e:es) <- mapM (const [ (x,y) | x <- xs, y <- xs, x/=y, p x y]) [1..getOdd xs], e `notElem` es]
+
+getOdd xs
+    | ((length xs) `div` 2) `mod` 2 == 1 = ((length xs) `div` 2)
+    | otherwise = ((length xs) `div` 2) + 1
 
 
 -------------------------------------------------------------------------------------------------------------
@@ -174,8 +163,6 @@ determineInst x y
 
 -------------------------------------------------------------------------------------------------------------
 -- Exercise A9 ----------------------------------------------------------------------------------------------
-data OptTree i = OptLeaf | OptNode (OptTree i) i (OptTree i) deriving (Eq,Show)
-
 optimalPower :: Int -> SMProg
 optimalPower n
     | n <= 0 = error "Cannot accept input that is 0 or smaller"
@@ -192,7 +179,7 @@ findOptimal n d
     | length opt > 0 = head opt
     | otherwise = findOptimal n (d+2)
           where
-             opt = take 1 [ p | p <- (summarize(generate d Dup)), findPower [1] p == [n]]
+             opt = take 1 [ p | p <- (generate d), findPower [1] p == [n]]
 
 findPower :: Stack -> SMProg -> Stack
 findPower [] _ = error "Cannot have empty stack"
@@ -204,17 +191,12 @@ findPower s p
     | head p == Dup = findPower ((head s) : s) (tail p)
     | head p == Pop = findPower (tail s) (tail p)
 
-generate :: Int -> Instruction -> OptTree Instruction
-generate 0 _ = OptLeaf
-generate depth i = OptNode (generate (depth - 1) Dup) i (generate (depth - 1) Add)
 
-summarize :: OptTree a -> [[a]]
-summarize OptLeaf = [[]]
-summarize (OptNode OptLeaf x r) = map (x:) (summarize r)
-summarize (OptNode l x OptLeaf) = map (x:) (summarize l)
-summarize (OptNode l x r) = map (x:) (lhs++rhs) where 
-    lhs = summarize l
-    rhs = summarize r
+generate :: Int -> [SMProg]
+generate i = [x| x <- mapM (const [Dup, Add]) [1..i], head x == Dup, last x == Add, ((length . filter (== Add)) x) == ((length . filter (== Dup)) x)]
+
+
+
 
 
 
